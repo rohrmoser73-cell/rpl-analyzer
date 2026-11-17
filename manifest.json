@@ -1,1 +1,16 @@
 
+{
+  "id": "/rpl-analyzer/",
+  "name": "Run pictures LeistungsAnalyzer",
+  "short_name": "RPL Analyzer",
+  "description": "Trainingsanalyse für Lauf- und Gehtraining mit GPX-Import, Bildern und Leistungsvergleichen.",
+  "start_url": "/rpl-analyzer/",
+  "scope": "/rpl-analyzer/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#263b32",
+  "lang": "de",
+  "icons": []
+}
+
