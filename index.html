@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#14251f">
+<title>Meine Trainingsanalyse</title>
+<style>
+:root{--bg:#f3f6f4;--panel:#fff;--ink:#17251f;--muted:#65736b;--line:#dce5df;--green:#237a52;--soft:#e8f2ec}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:#14251f;color:#fff;padding:22px max(18px,calc((100vw - 1100px)/2))}
+header h1{font-size:24px;margin:0 0 5px}header p{margin:0;color:#c8d8ce;font-size:13px}
+main{max-width:1100px;margin:auto;padding:18px;display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 2px 9px #15251a08}
+h2{font-size:18px;margin:0 0 13px}.sub{color:var(--muted);font-size:13px;margin:-7px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:12px;font-weight:650;color:var(--muted);margin:0 0 5px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;color:var(--ink);font:inherit}
+textarea{min-height:75px;resize:vertical}.full{grid-column:1/-1}
+button{border:0;border-radius:10px;padding:11px 15px;background:var(--green);color:white;font-weight:700;font:inherit;cursor:pointer}
+button.secondary{background:var(--soft);color:#1d6040}button.danger{background:#fbeaea;color:#a12d2d}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.stat{background:var(--soft);border-radius:12px;padding:12px}.stat b{display:block;font-size:21px}.stat span{font-size:11px;color:var(--muted)}
+.chart{width:100%;height:220px;display:block}.legend{display:flex;flex-wrap:wrap;gap:8px 13px;font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.chartbox{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px}.chartbox h3{font-size:14px;margin:0 0 3px}
+.compare-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}.compare-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700}.compare-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.compare-metric{background:#f5f8f6;border-radius:9px;padding:9px}.compare-metric b{display:block;font-size:17px}.compare-metric span{font-size:11px;color:var(--muted)}.positive{color:#197447}.negative{color:#b33b35}
+@media(max-width:520px){.compare-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.list{display:grid;gap:8px}.session{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:10px}.session small{display:block;color:var(--muted)}
+.preview{max-width:100%;max-height:170px;display:none;border-radius:9px;margin-top:8px}.digitizerCanvas{display:block;width:auto;max-width:100%;max-height:320px;height:auto;margin:8px auto;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#f7f8f7;touch-action:none}.digitizerGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}.digitizerGrid>div{min-width:0}.session details{margin-top:6px}.session details img{display:block;max-width:180px;max-height:150px;margin-top:6px;border-radius:8px}.swatch{display:inline-block;width:14px;height:14px;border:1px solid #777;border-radius:4px;vertical-align:middle;margin-left:5px}
+.notice{font-size:12px;color:var(--muted);line-height:1.5;background:#f6f8f6;padding:10px;border-radius:9px}.repairBox{margin-top:12px;padding:12px;border:1px solid #e7c98a;background:#fff9eb;border-radius:10px}.repairBox p{font-size:12px;line-height:1.45;color:var(--muted);margin:7px 0}
+.empty{color:var(--muted);font-size:13px;padding:16px;text-align:center}
+#routeMap{height:360px;width:100%;border-radius:12px;overflow:hidden;background:#eef2ef}.map-note{font-size:12px;color:var(--muted);margin-top:8px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:12px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header><h1>Meine Trainingsanalyse</h1><p>Deine Trainings. Deine Entwicklung. Lokal auf diesem Gerät gespeichert.</p></header>
+<main>
+<section class="card">
+<h2>Training hinzufügen</h2><p class="sub">Trainingsbild hochladen: Die vier Leistungskurven werden automatisch erkannt. GPX/TCX/CSV kannst du zusätzlich wie bisher importieren.</p>
+<form id="form">
+<div class="grid">
+<div><label>Datum</label><input id="date" type="date" required></div>
+<div><label>Quelle</label><select id="source"><option>GloryFitPro</option><option>Polar</option><option>Garmin</option></select></div>
+<div><label>Trainingsart</label><select id="kind"><option>Laufen</option><option>Gehen</option><option>Wandern</option><option>Radfahren</option><option>Sonstiges</option></select></div>
+<div><label>Distanz (km)</label><input id="distance" type="number" step=".01" min="0" placeholder="z. B. 5.20"></div>
+<div><label>Dauer (Minuten)</label><input id="duration" type="number" step=".1" min="0" placeholder="z. B. 35"></div>
+<div><label>Ø Herzfrequenz (bpm)</label><input id="hr" type="number" min="0" placeholder="z. B. 145"></div>
+<div><label>Ø Tempo (min/km)</label><input id="pace" type="text" placeholder="z. B. 6:45"></div>
+<div><label>Ø Schrittfrequenz (Schritte/min)</label><input id="cadence" type="number" min="0" placeholder="z. B. 160"></div>
+<div><label>Höhenmeter bergauf (m)</label><input id="elev" type="number" min="0" placeholder="z. B. 220"></div>
+<div class="full"><details><summary>Weitere Leistungsdaten aus dem Screenshot</summary><div class="grid" style="margin-top:10px"><div><label>Kalorien (kcal)</label><input id="calories" type="number" min="0"></div><div><label>Gesamtschritte</label><input id="steps" type="number" min="0"></div><div><label>Max. Herzfrequenz (bpm)</label><input id="hrMax" type="number" min="0"></div><div><label>Max. Kadenz (Schritte/min)</label><input id="cadenceMax" type="number" min="0"></div><div><label>Größte Höhe (m)</label><input id="altitudeMax" type="number" min="0" step="0.1"></div><div><label>Höhenunterschied (m)</label><input id="elevationDiff" type="number" min="0" step="0.1"></div></div><p class="sub" style="margin:8px 0 0">Diese Werte werden aus dem oberen Kennzahlenbereich und den Diagramm-Kopfzeilen gelesen. Bitte OCR-Ergebnisse kurz kontrollieren.</p></details></div>
+<div class="full"><label>Trainingsbild / Screenshot</label><div class="actions" style="margin-top:0"><button type="button" class="secondary" id="connectImageFolder">Bildordner verbinden / neuestes Bild suchen</button><button type="button" class="secondary" id="manualImagePick">Bild manuell hochladen</button></div><input id="image" type="file" accept="image/*" style="margin-top:8px"><img id="preview" class="preview" alt="Vorschau"><div id="folderStatus" class="sub" style="margin:8px 0 0">Optional: In unterstützten Browsern kannst du einmal deinen Screenshot-Ordner freigeben. Danach sucht die App beim Öffnen automatisch das neueste Bild. Die manuelle Auswahl bleibt jederzeit verfügbar. Auf vielen Android-Handys ist eine automatische Ordnerfreigabe im Browser nicht verfügbar.</div><div id="ocrStatus" class="sub" style="margin:8px 0 0">Nach dem Bildimport versucht die App automatisch, Herzfrequenz, Tempo, Schrittfrequenz und Höhenprofil als Linien zu erkennen.</div><div class="actions"><button type="button" class="secondary" id="ocr">Kennzahlen zusätzlich auslesen</button></div><div id="autoCurveStatus" class="notice" style="margin-top:8px" hidden></div></div>
+<div class="full"><label>Trainingsdatei importieren (TCX, GPX oder CSV)</label><input id="activityFile" type="file" accept=".tcx,.gpx,.csv,.xml,text/xml,text/csv,application/gpx+xml" multiple><div class="sub" style="margin:6px 0 0">Du kannst mehrere Dateien gleichzeitig auswählen. GPX importiert GPS-Strecke, Zeit und Höhenprofil; Puls/Kadenz nur, wenn sie in der Datei enthalten sind.</div><div id="repairBox" class="repairBox" hidden><strong>GPX-Datei konnte nicht vollständig gelesen werden</strong><p id="repairText">Die App versucht zuerst eine lokale Reparatur. Falls nötig, kannst du GPS Visualizer verwenden.</p><div class="actions"><button type="button" id="repairGps" class="secondary">An GPS Visualizer senden</button><button type="button" id="pickRepairedGps" class="secondary">Reparierte GPX auswählen und automatisch importieren</button></div><input id="repairedGpsFile" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml" hidden><p class="sub" style="margin:8px 0 0">GPS Visualizer kann die Datei nicht direkt in diese lokale App zurückschicken. Lade dort die reparierte GPX herunter und wähle sie anschließend über die zweite Schaltfläche aus. Danach wird sie ohne weiteren Speicherschritt importiert. Der Upload an GPS Visualizer erfolgt nur nach deinem Klick.</p></div></div>
+<div class="full"><details><summary>Kurvenwerte bei Bedarf manuell korrigieren</summary><div class="sub" style="margin:8px 0">Die automatisch erkannten Bildkurven können hier bei Bedarf angepasst werden.</div></details></div>
+<div><label>Puls-Verlauf (bpm)</label><textarea id="hrSeries" placeholder="110,125,138,145"></textarea></div>
+<div><label>Tempo-Verlauf (min/km)</label><textarea id="paceSeries" placeholder="7.2,6.9,7.1,6.8"></textarea></div>
+<div><label>Kadenz-Verlauf (Schritte/min)</label><textarea id="cadSeries" placeholder="150,158,162,160"></textarea></div>
+<div><label>Höhenverlauf (m)</label><textarea id="altSeries" placeholder="920,925,940,950"></textarea></div>
+</div>
+<div class="actions"><button type="submit">Training speichern</button><button type="reset" class="secondary">Formular leeren</button></div>
+</form>
+<p class="notice" style="margin-top:12px">Die fünf bisherigen Einheiten vom 08.–12.11.2026 sind Startdaten aus deinen bisherigen Trainings. Ihre Kurven sind ausdrücklich als Näherungen aus Screenshots markiert, nicht als exakte Sensormessungen. Neue Trainings importierst du selbst per GPX/TCX/CSV oder ergänzt sie manuell. Es werden keine künstlichen Beispielkurven mehr in deine echte Trainingsauswertung geladen.</p>
+</section>
+<section class="card"><h2>Deine Übersicht</h2><div id="activityBreakdown" class="grid" style="margin:10px 0"></div><p id="storageInfo" class="sub">Gespeicherte Trainings werden aus dem Browser-Speicher geladen.</p><div class="stats" id="stats"><div class="stat"><b>0</b><span>Einheiten</span></div><div class="stat"><b>0 km</b><span>Gesamtdistanz</span></div><div class="stat"><b>0 m</b><span>Gesamtanstieg</span></div><div class="stat"><b>–</b><span>Ø Puls</span></div></div></section>
+<section class="card"><h2>Leistungskurven im Vergleich</h2><p class="sub">Nur tatsächlich gespeicherte Kurvenwerte werden gezeichnet. X-Achse = Messpunkte ab Trainingsbeginn. Durchgezogen = importierte/manuelle Messreihe; gestrichelt und * = aus Screenshots angenähert. Fehlende Messwerte bleiben leer und werden nicht erfunden.</p>
+<div id="charts"></div><div id="empty" class="empty">Noch keine Trainings mit Kurvenwerten vorhanden. Importiere eine echte GPX-, TCX- oder CSV-Datei oder trage eine Messreihe manuell ein.</div>
+</section>
+<section class="card"><h2>Leistungsvergleich bei gleicher Trainingszeit</h2><p class="sub">Alle Einheiten der gewählten Trainingsart werden berücksichtigt – unabhängig von ihrer tatsächlichen Dauer. Die Distanzen werden rechnerisch auf eine gemeinsame Zielzeit normiert.</p>
+<div class="grid"><div><label for="compareTarget">Vergleichszeit (Minuten)</label><input id="compareTarget" type="number" min="1" max="600" step="1" value="45"></div><div class="notice">Die tatsächlichen Trainingszeiten müssen nicht übereinstimmen. So lassen sich auch unterschiedlich lange Einheiten fairer vergleichen.</div><div class="full"><label for="compareKind">Trainingsart</label><select id="compareKind"><option value="Laufen">Laufen</option><option value="Gehen">Gehen</option><option value="Wandern">Wandern</option><option value="Radfahren">Radfahren</option><option value="Alle">Alle Trainingsarten</option></select></div></div>
+<div id="timeComparison" aria-live="polite"></div><p class="notice" style="margin-top:10px">Die normierte Distanz ist eine rechnerische Hochrechnung aus deiner Durchschnittsgeschwindigkeit, keine tatsächlich gelaufene Strecke. Aussagekräftiger wird der Vergleich bei ähnlicher Strecke, Höhenprofil und Belastung. Bildwerte können Näherungswerte sein (*).</p></section>
+<section class="card"><h2>Alle Laufstrecken auf einer Karte</h2><p class="sub">GPX- und TCX-Strecken werden farbig übereinandergelegt. Tippe auf eine Linie, um die Einheit zu sehen.</p><div id="routeMap"></div><div id="mapLegend" class="legend" style="margin-top:10px"></div><p class="map-note">Die Karte benötigt eine Internetverbindung für Kartendaten. GPS-Strecken bleiben lokal in deinem Browser gespeichert.</p></section>
+<section class="card"><h2>Fortschritt</h2><div id="progress" class="notice">Nach mindestens zwei gespeicherten Einheiten erscheinen hier deine Entwicklungstendenzen.</div></section>
+<section class="card"><h2>Trainingshistorie</h2><div id="sessions" class="list"><div class="empty">Noch keine Einheiten gespeichert.</div></div>
+<div class="actions"><button class="secondary" id="importBase">Meine 5 bisherigen Einheiten ergänzen</button><button class="secondary" id="export">Daten als JSON exportieren</button><button class="secondary" id="restoreBackup">JSON-Backup wiederherstellen</button><input id="backupFile" type="file" accept=".json,application/json" hidden><button class="danger" id="clear">Alle Daten auf diesem Gerät löschen</button></div></section>
+</main>
+<script>
+const KEY='meineTrainingsanalyse_v1', colors=['#237a52','#2878b8','#d47a24','#8a58a5','#c34f5c','#269c9b','#7b7d36','#555f73'];
+const savedRaw=localStorage.getItem(KEY);
+let sessions=[];
+try{sessions=savedRaw===null?[]:JSON.parse(savedRaw);if(!Array.isArray(sessions))sessions=[];}catch(e){sessions=[];}
+let imageData='', importedRoute=null, routeMap=null, routeLayers=[], failedGpsFiles=[], archivedDemoCount=0;
+
+const $=id=>document.getElementById(id);
+$('date').value=new Date().toISOString().slice(0,10);
+async function compressImage(file){
+ const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});
+ const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=data});
+ const scale=Math.min(1,1400/img.width),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+ const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);return c.toDataURL('image/jpeg',0.78);
+}
+function resetGraphTool(){}
+function hueMatch(r,g,b,metric){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(mx<65||d<28)return false;let h=0;if(d===0)return false;if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h=(h*60+360)%360;const sat=d/Math.max(1,mx);if(sat<.22)return false;return metric==='hr'?(h>=335||h<=18):metric==='pace'?(h>=75&&h<=165):metric==='cad'?(h>=18&&h<=65): (h>=185&&h<=255);}
+function autoExtractCurves(canvas){
+ // Pixelbasierte Digitalisierung der sichtbaren Diagrammlinien. Die Plotfenster sind
+ // auf den GloryFitPro-Screenshot abgestimmt; Koordinaten werden relativ zur Bildgroesse berechnet.
+ const w=canvas.width,h=canvas.height,ctx=canvas.getContext('2d',{willReadFrequently:true}),data=ctx.getImageData(0,0,w,h).data;
+ const specs=[
+  {key:'hr',name:'Herzfrequenz',plot:[.286,.357],min:0,max:180,hue:[335,18],mode:'top'},
+  {key:'pace',name:'Tempo',plot:[.526,.594],min:0,max:14.99,hue:[75,165],mode:'top'},
+  {key:'cad',name:'Schrittfrequenz',plot:[.691,.762],min:0,max:167,hue:[18,65],mode:'top'},
+  {key:'alt',name:'Höhenprofil',plot:[.854,.918],min:0,max:1155,hue:[185,255],mode:'top'}
+ ];
+ const x0=Math.round(w*.30),x1=Math.round(w*.93),samples=Math.max(120,Math.min(320,Math.round((x1-x0)*.9))),results={},found=[],quality={};
+ const isHue=(r,g,b,range)=>{const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(mx<75||d<34)return false;let hh=0;if(mx===r)hh=((g-b)/d)%6;else if(mx===g)hh=(b-r)/d+2;else hh=(r-g)/d+4;hh=(hh*60+360)%360;const sat=d/Math.max(1,mx);return sat>.28&&(range[0]<=range[1]?(hh>=range[0]&&hh<=range[1]):(hh>=range[0]||hh<=range[1]));};
+ for(const m of specs){
+  const y0=Math.round(h*m.plot[0]),y1=Math.round(h*m.plot[1]),ys=Array(samples).fill(null),counts=Array(samples).fill(0);
+  for(let i=0;i<samples;i++){
+   const xa=Math.max(x0,Math.floor(x0+i*(x1-x0)/samples)-1),xb=Math.min(x1,Math.ceil(x0+(i+1)*(x1-x0)/samples)+1),hits=[];
+   for(let x=xa;x<xb;x++)for(let y=y0;y<y1;y++){const k=(y*w+x)*4;if(isHue(data[k],data[k+1],data[k+2],m.hue))hits.push(y);}
+   if(hits.length){hits.sort((a,b)=>a-b);ys[i]=m.mode==='top'?hits[0]:hits[Math.floor(hits.length/2)];counts[i]=hits.length;}
+  }
+  const valid=ys.filter(v=>v!==null).length,ratio=valid/samples;quality[m.key]=Math.round(ratio*100);
+  if(ratio<.35)continue;
+  // Kleine Luecken werden interpoliert; groessere Luecken bleiben nur bei ausreichender
+  // Nachbarschaft gefuellt, damit keine unplausiblen Spruenge entstehen.
+  for(let i=0;i<samples;i++)if(ys[i]===null){let l=i-1,r=i+1;while(l>=0&&ys[l]===null)l--;while(r<samples&&ys[r]===null)r++;if(l>=0&&r<samples&&r-l<=8)ys[i]=ys[l]+(ys[r]-ys[l])*(i-l)/(r-l);}
+  const first=ys.findIndex(v=>v!==null),last=ys.length-1-ys.slice().reverse().findIndex(v=>v!==null);
+  if(first<0||last<=first)continue;
+  for(let i=0;i<samples;i++)if(ys[i]===null){if(i<first)ys[i]=ys[first];else if(i>last)ys[i]=ys[last];else{let l=i-1,r=i+1;while(l>=0&&ys[l]===null)l--;while(r<samples&&ys[r]===null)r++;if(l>=0&&r<samples)ys[i]=ys[l]+(ys[r]-ys[l])*(i-l)/(r-l);}}
+  // Plot-Kalibrierung: obere und untere horizontale Achsengrenze. Die sichtbare
+  // Kurve wird damit in die auf dem Screenshot angezeigte Skala umgerechnet.
+  const plotTop=y0,plotBottom=y1;
+  let vals=ys.map(y=>m.min+(plotBottom-y)/(plotBottom-plotTop)*(m.max-m.min));
+  if(m.key==='pace')vals=vals.map(v=>Math.max(0,Math.min(15,v)));
+  if(m.key==='hr')vals=vals.map(v=>Math.max(0,Math.min(180,v)));
+  if(m.key==='cad')vals=vals.map(v=>Math.max(0,Math.min(167,v)));
+  if(m.key==='alt')vals=vals.map(v=>Math.max(0,Math.min(1155,v)));
+  results[m.key]=vals.map(v=>Number(v.toFixed(1)));found.push(m.name);
+ }
+ return {results,found,quality,samples};
+}
+async function ensureTesseract(){if(window.Tesseract)return;await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=resolve;sc.onerror=reject;document.head.appendChild(sc);});}
+function parseScreenshotDate(text){const t=String(text||'').replace(/[|]/g,'1');let m=t.match(/\b(\d{1,2})[.\/\-](\d{1,2})[.\/\-](20\d{2})\b/);if(m){const d=Number(m[1]),mo=Number(m[2]),y=Number(m[3]);if(d>=1&&d<=31&&mo>=1&&mo<=12)return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}m=t.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}-${String(Number(m[3])).padStart(2,'0')}`;return '';}
+async function detectDateFromScreenshot(img){try{await ensureTesseract();const crop=document.createElement('canvas');crop.width=Math.max(1,Math.round(img.width*.95));crop.height=Math.max(1,Math.round(img.height*.22));const cx=crop.getContext('2d',{willReadFrequently:true});cx.drawImage(img,0,0,img.width*.95,img.height*.22,0,0,crop.width,crop.height);const result=await Tesseract.recognize(crop,'eng');const found=parseScreenshotDate(result.data.text);if(found){$('date').value=found;$('ocrStatus').textContent='Bilddatum erkannt: '+found.split('-').reverse().join('.')+'. Dieses Datum wird in den Kurvenbeschreibungen verwendet. Bitte kurz prüfen.';return found;}return ''; }catch(e){return '';}}
+function parseScreenshotMetrics(text){
+ const raw=String(text||'').replace(/\r/g,'\n').replace(/[|]/g,'1');
+ const compact=raw.replace(/\s+/g,' ');
+ const number=(re)=>{const m=compact.match(re);return m?Number(m[1].replace(',','.')):null;};
+ const after=(labels, re)=>{for(const label of labels){const i=compact.toLowerCase().indexOf(label.toLowerCase());if(i>=0){const part=compact.slice(i,i+100);const m=part.match(re);if(m)return m[1];}}return null;};
+ const out={};
+ // GloryFitPro zeigt Distanz, Dauer und Kalorien prominent im oberen Kennzahlenblock.
+ let v=number(/\b(\d{1,2}[.,]\d{1,2})\s*km\b/i);if(v!==null)out.distance=v;
+ let dm=compact.match(/\b(\d{1,2}):(\d{2}):(\d{2})\b/);if(dm)out.duration=(Number(dm[1])*60+Number(dm[2])+Number(dm[3])/60);
+ v=number(/\b(\d{2,4}(?:[.,]\d+)?)\s*kcal\b/i);if(v!==null)out.calories=Math.round(v);
+ let pace=compact.match(/(?:Durchschn\.?\s*Tempo|Durchschnitts?tempo|Tempo|Pace)[^0-9]{0,35}(\d{1,2})\s*['′:]\s*(\d{2})/i);if(pace)out.pace=pace[1]+':'+pace[2];
+ let cadence=after(['Durchschn. Kadenz','Durchschnittliche Kadenz','Kadenz'],/(\d{2,3})\s*(?:Schritte\s*\/\s*Min|Schritte\/Min|steps\s*\/\s*min)?/i);if(cadence&&Number(cadence)>=40&&Number(cadence)<=250)out.cadence=Number(cadence);
+ let steps=number(/\b(\d{3,7})\s*Schritte\b(?!\s*\/)/i);if(steps!==null)out.steps=Math.round(steps);
+ let hr=after(['Durchschn. Herzfrequenz','Durchschnittliche Herzfrequenz','Herzfrequenz'],/(\d{2,3})\s*(?:Schläge|bpm)?/i);if(hr&&Number(hr)>=40&&Number(hr)<=230)out.hr=Number(hr);
+ let hrmax=after(['Maximale Herzfrequenz','Max. Herzfrequenz','Max Heart Rate'],/(\d{2,3})/);if(hrmax&&Number(hrmax)>=40&&Number(hrmax)<=240)out.hrMax=Number(hrmax);
+ let cadmax=after(['Max. Kadenz','Maximale Kadenz','Max Cadence'],/(\d{2,3})/);if(cadmax&&Number(cadmax)>=40&&Number(cadmax)<=250)out.cadenceMax=Number(cadmax);
+ let altmax=after(['Größte Höhe','Maximale Höhe','Highest altitude'],/(\d{3,4}(?:[.,]\d+)?)/);if(altmax)out.altitudeMax=Number(altmax.replace(',','.'));
+ let diff=after(['Höhenunterschied','Höhendifferenz','Elevation difference'],/(\d{1,4}(?:[.,]\d+)?)/);if(diff)out.elevationDiff=Number(diff.replace(',','.'));
+ let ascent=after(['Gesamtanstieg','Gesamtabstieg','Total ascent'],/(\d{1,4}(?:[.,]\d+)?)/);if(ascent)out.elev=Number(ascent.replace(',','.'));
+ return out;
+}
+async function readScreenshotMetrics(img){
+ try{await ensureTesseract();const result=await Tesseract.recognize(img,'deu+eng');const metrics=parseScreenshotMetrics(result.data.text);const map={distance:'distance',duration:'duration',hr:'hr',pace:'pace',cadence:'cadence',elev:'elev',calories:'calories',steps:'steps',hrMax:'hrMax',cadenceMax:'cadenceMax',altitudeMax:'altitudeMax',elevationDiff:'elevationDiff'};
+ for(const [key,id] of Object.entries(map)){if(metrics[key]!==undefined&&metrics[key]!==null){if(key==='pace')setField(id,metrics[key]);else if($(id)&&(!$(id).value||key==='distance'||key==='duration'||key==='hr'||key==='pace'||key==='cadence'||key==='elev'))setField(id,metrics[key]);}}
+ return Object.keys(metrics);
+ }catch(e){return [];}
+}
+async function processImageFile(f){if(!f)return;$('ocrStatus').textContent='Bild wird geladen und die vier Kurven werden gesucht …';$('autoCurveStatus').hidden=true;try{imageData=await compressImage(f);$('preview').src=imageData;$('preview').style.display='block';const im=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=imageData});const c=document.createElement('canvas');const scale=Math.min(1,1400/im.width,2600/im.height);c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));c.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0,c.width,c.height);const out=autoExtractCurves(c);const map={hr:'hrSeries',pace:'paceSeries',cad:'cadSeries',alt:'altSeries'};for(const [key,field] of Object.entries(map)){if(out.results[key])$(field).value=out.results[key].join(',');}
+ if(out.found.length){$('autoCurveStatus').hidden=false;$('autoCurveStatus').textContent='Pixelbasierte Kurvendigitalisierung: '+out.found.join(', ')+'. Aufloesung: '+out.samples+' Messpunkte je Kurve. Erkennungsabdeckung: '+Object.entries(out.quality).map(([k,v])=>k+' '+v+'%').join(', ')+'. Screenshot-Digitalisierung bleibt eine Naeherung, keine originalen Sensordaten. Bitte pruefen und speichern.';$('ocrStatus').textContent='Bild übernommen. Die digitalisierten Linien stehen bereits in den Kurvenfeldern. Bilddatum wird gesucht …';}else{$('ocrStatus').textContent='Das Bild wurde geladen, aber die farbigen Diagrammlinien konnten nicht sicher erkannt werden. Bitte einen vollständigen Screenshot mit gut sichtbaren Diagrammen verwenden.';}
+ const detectedDate=await detectDateFromScreenshot(im);const metricKeys=await readScreenshotMetrics(im);if(metricKeys.length)$('ocrStatus').textContent+=' Zusätzlich erkannte Kennzahlen: '+metricKeys.join(', ')+'. Bitte vor dem Speichern kurz kontrollieren.';if(!detectedDate&&out.found.length)$('ocrStatus').textContent+=' Das Datum konnte nicht sicher erkannt werden; bitte das Datumsfeld kontrollieren oder manuell ausfüllen.';
+ }catch(err){$('ocrStatus').textContent='Das Bild konnte nicht verarbeitet werden: '+err.message;}}
+$('image').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];await processImageFile(f);e.target.value='';});
+$('manualImagePick').onclick=()=>$('image').click();
+// Optionaler Ordnerzugriff über die File System Access API. Der Nutzer erteilt die Freigabe ausdrücklich.
+const DIR_DB='trainingsanalyse-image-folder',DIR_STORE='handles';
+function openDirDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DIR_DB,1);req.onupgradeneeded=()=>req.result.createObjectStore(DIR_STORE);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function storeDirHandle(handle){const db=await openDirDb();return new Promise((resolve,reject)=>{const tx=db.transaction(DIR_STORE,'readwrite');tx.objectStore(DIR_STORE).put(handle,'screenshots');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+async function loadDirHandle(){const db=await openDirDb();return new Promise((resolve,reject)=>{const tx=db.transaction(DIR_STORE,'readonly'),req=tx.objectStore(DIR_STORE).get('screenshots');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});}
+async function findNewestImage(handle){let newest=null;for await(const [name,entry] of handle.entries()){if(entry.kind!=='file'||!(/\.(jpe?g|png|webp|gif|heic|heif)$/i).test(name))continue;try{const f=await entry.getFile();if(!newest||f.lastModified>newest.lastModified)newest=f;}catch(_){}}return newest;}
+async function scanConnectedImageFolder(fromClick=false){try{const handle=await loadDirHandle();if(!handle){$('folderStatus').textContent='Noch kein Bildordner verbunden. Tippe auf „Bildordner verbinden“, sofern dein Browser diese Funktion unterstützt.';return;}let permission=await handle.queryPermission({mode:'read'});if(permission!=='granted'&&fromClick)permission=await handle.requestPermission({mode:'read'});if(permission!=='granted'){$('folderStatus').textContent='Der Browser benötigt erneut deine Freigabe. Tippe auf „Bildordner verbinden / neuestes Bild suchen“. Die manuelle Auswahl funktioniert weiterhin.';return;}const f=await findNewestImage(handle);if(!f){$('folderStatus').textContent='Im verbundenen Ordner wurde kein unterstütztes Bild gefunden.';return;}const marker=handle.name+'|'+f.name+'|'+f.lastModified;if(sessionStorage.getItem('lastAutoImage')===marker&&!fromClick){$('folderStatus').textContent='Der neueste Screenshot wurde bereits in dieser Sitzung geprüft: '+f.name;return;}sessionStorage.setItem('lastAutoImage',marker);$('folderStatus').textContent='Neuestes Bild gefunden: '+f.name+'. Die Kurven werden übernommen …';await processImageFile(f);}catch(err){$('folderStatus').textContent='Automatische Ordnersuche nicht verfügbar: '+err.message+'. Bitte verwende die manuelle Bildauswahl.';}}
+$('connectImageFolder').onclick=async()=>{if(!window.showDirectoryPicker){$('folderStatus').textContent='Dein Browser auf diesem Gerät unterstützt leider keine Ordnerfreigabe. Bitte nutze „Bild manuell hochladen“; das bleibt vollständig verfügbar.';return;}try{const handle=await window.showDirectoryPicker({mode:'read'});await storeDirHandle(handle);$('folderStatus').textContent='Bildordner „'+handle.name+'“ verbunden. Suche nach dem neuesten Bild …';await scanConnectedImageFolder(true);}catch(err){if(err.name!=='AbortError')$('folderStatus').textContent='Ordner konnte nicht verbunden werden: '+err.message;}};
+// Beim nächsten Öffnen wird nur dann automatisch gesucht, wenn eine gespeicherte Freigabe weiterhin gültig ist.
+if('showDirectoryPicker' in window&&'indexedDB' in window){scanConnectedImageFolder(false);}
+function nums(id){return $(id).value.split(/[;,\\s]+/).map(x=>Number(x.replace(',','.'))).filter(x=>Number.isFinite(x)&&x!==0)}
+function paceVal(s){if(!s)return null;if(s.includes(':')){let [m,sec]=s.split(':').map(Number);return m+sec/60}return Number(s.replace(',','.'))||null}
+$('form').addEventListener('submit',async e=>{e.preventDefault();const item={id:Date.now(),date:$('date').value,source:$('source').value,kind:$('kind').value,distance:+$('distance').value||0,duration:+$('duration').value||0,hr:+$('hr').value||0,pace:paceVal($('pace').value),paceLabel:$('pace').value,cadence:+$('cadence').value||0,elev:+$('elev').value||0,calories:+$('calories').value||0,steps:+$('steps').value||0,hrMax:+$('hrMax').value||0,cadenceMax:+$('cadenceMax').value||0,altitudeMax:+$('altitudeMax').value||0,elevationDiff:+$('elevationDiff').value||0,image:imageData,series:{hr:nums('hrSeries'),pace:nums('paceSeries'),cad:nums('cadSeries'),alt:nums('altSeries')},approximate:!!imageData,route:importedRoute};sessions.push(item);importedRoute=null;const ok=await save();if(ok){$('form').reset();$('date').value=new Date().toISOString().slice(0,10);imageData='';$('preview').style.display='none';resetGraphTool();$('ocrStatus').textContent='Training gespeichert. Du kannst sofort dasselbe Foto erneut auswählen.';}});
+let dbPromise=null, saveQueue=Promise.resolve(), dbReady=false, storageReadyPromise=null;
+function openTrainingDB(){
+ if(!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB wird von diesem Browser-Kontext nicht unterstützt.'));
+ if(dbPromise)return dbPromise;
+ dbPromise=new Promise((resolve,reject)=>{
+  const req=indexedDB.open('MeineTrainingsanalyseDB',1);
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('data'))db.createObjectStore('data');};
+  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('Datenbank konnte nicht geöffnet werden.'));
+ });
+ return dbPromise;
+}
+async function readTrainingDB(){const db=await openTrainingDB();return new Promise((resolve,reject)=>{const tx=db.transaction('data','readonly'),r=tx.objectStore('data').get(KEY);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+async function writeTrainingDB(snapshot){const db=await openTrainingDB();return new Promise((resolve,reject)=>{const tx=db.transaction('data','readwrite');tx.objectStore('data').put(snapshot,KEY);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Speichervorgang fehlgeschlagen.'));tx.onabort=()=>reject(tx.error||new Error('Speichervorgang abgebrochen.'));});}
+function sessionRichness(s){let n=0;if(s.image)n+=2;if(s.route&&s.route.length>1)n+=10;if(s.series)for(const v of Object.values(s.series))if(Array.isArray(v))n+=Math.min(v.length,500)/10;return n;}
+function mergeSessionSets(primary,secondary){
+ const map=new Map();
+ for(const item of [...(Array.isArray(primary)?primary:[]),...(Array.isArray(secondary)?secondary:[])]){
+  if(!item||item.id==null)continue;const old=map.get(item.id);
+  if(!old){map.set(item.id,item);continue;}
+  const rich=sessionRichness(item)>sessionRichness(old)?item:old, other=rich===item?old:item;
+  const merged={...other,...rich};
+  if((!merged.route||merged.route.length<2)&&other.route&&other.route.length>1)merged.route=other.route;
+  merged.series={...(other.series||{}),...(rich.series||{})};
+  for(const k of ['hr','pace','cad','alt'])if((!Array.isArray(merged.series[k])||!merged.series[k].length)&&other.series&&Array.isArray(other.series[k]))merged.series[k]=other.series[k];
+  if(!merged.image&&other.image)merged.image=other.image;
+  map.set(item.id,merged);
+ }
+ return [...map.values()].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+}
+function isQuotaError(err){return !!err&&(err.name==='QuotaExceededError'||err.name==='NS_ERROR_DOM_QUOTA_REACHED'||/quota|speicher|space|disk/i.test(String(err.message||'')));}
+function compactRoute(route,maxPoints=240){if(!Array.isArray(route)||route.length<=maxPoints)return route;const out=[];for(let i=0;i<maxPoints;i++){const idx=Math.round(i*(route.length-1)/(maxPoints-1));out.push(route[idx]);}return out;}
+function makeStorageSnapshot(source){
+ const copy=JSON.parse(JSON.stringify(source));
+ // Automatische Speicherpflege: Kennzahlen, Zeitreihen und Karten bleiben erhalten.
+ // Alte Screenshots belegen am meisten Platz; nur das neueste Bild bleibt eingebettet.
+ const withImages=copy.filter(s=>s&&s.image);
+ const keepImageId=withImages.length?withImages.reduce((a,b)=>(Number(a.id)||0)>(Number(b.id)||0)?a:b).id:null;
+ let removedImages=0,shortenedRoutes=0;
+ for(const s of copy){if(s.image&&s.id!==keepImageId){s.image='';removedImages++;}if(Array.isArray(s.route)&&s.route.length>240){s.route=compactRoute(s.route,240);shortenedRoutes++;}}
+ return {copy,removedImages,shortenedRoutes};
+}
+async function writeTrainingDBWithCleanup(source){
+ try{await writeTrainingDB(source);return {data:source,cleaned:false};}
+ catch(firstError){if(!isQuotaError(firstError))throw firstError;}
+ const compact=makeStorageSnapshot(source);
+ try{await writeTrainingDB(compact.copy);return {data:compact.copy,cleaned:true,removedImages:compact.removedImages,shortenedRoutes:compact.shortenedRoutes};}
+ catch(secondError){
+  // Bei weiterhin knappem Speicher werden auch die Bildvorschauen entfernt;
+  // die vier Leistungskurven, Kennzahlen und GPS-Linien bleiben bestehen.
+  const lean=compact.copy.map(s=>({...s,image:''}));
+  for(const s of lean)if(Array.isArray(s.route)&&s.route.length>100)s.route=compactRoute(s.route,100);
+  await writeTrainingDB(lean);
+  return {data:lean,cleaned:true,removedImages:compact.copy.filter(s=>s.image).length,shortenedRoutes:compact.shortenedRoutes};
+ }
+}
+async function save(){
+ let outcome=null;
+ saveQueue=saveQueue.catch(()=>{}).then(async()=>{
+  if(storageReadyPromise)await storageReadyPromise;
+  const snapshot=JSON.parse(JSON.stringify(sessions));
+  outcome=await writeTrainingDBWithCleanup(snapshot);sessions=outcome.data;dbReady=true;
+  const el=$('storageInfo');if(el){el.textContent=el.textContent.replace(/ · Speicherung:.*$/,'')+' · Speicherung: IndexedDB'+(outcome.cleaned?' · Speicher automatisch bereinigt (alte Fotos entfernt, Kurven und GPS-Daten behalten)':'');}
+ });
+ try{await saveQueue;render();if(outcome&&outcome.cleaned)alert('Der Browserspeicher war knapp. Die App hat automatisch ältere Screenshot-Bilder entfernt und GPS-Strecken bei Bedarf komprimiert. Trainingswerte, Leistungskurven und Strecken bleiben erhalten.');return true;}
+ catch(err){console.error('IndexedDB-Speicherung:',err);alert('Auch nach automatischer Speicherbereinigung ist zu wenig Browserspeicher verfügbar. Trainingsdaten wurden nicht absichtlich gelöscht. Bitte exportiere zuerst ein JSON-Backup.');return false;}
+}
+async function recoverMissingCurvesFromImages(){
+ let changed=false;
+ for(const s of sessions){
+  const missing=['hr','pace','cad','alt'].filter(k=>!s.series||!Array.isArray(s.series[k])||!s.series[k].length);
+  if(!missing.length||!s.image)continue;
+  try{
+   const im=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=s.image;});
+   const c=document.createElement('canvas'),scale=Math.min(1,1400/im.width,2600/im.height);c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));c.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0,c.width,c.height);
+   const out=autoExtractCurves(c);if(out.found.length){s.series=s.series||{};for(const k of missing)if(out.results[k]&&out.results[k].length)s.series[k]=out.results[k];s.approximate=true;changed=true;}
+  }catch(e){console.warn('Kurven aus gespeichertem Screenshot konnten nicht rekonstruiert werden',e);}
+ }
+ return changed;
+}
+async function initializeTrainingStorage(){
+ try{
+  const stored=await readTrainingDB();
+  // Beide Quellen zusammenführen: Ein vorhandener DB-Datensatz darf ältere, aber
+  // vollständigere localStorage-Einträge (Kurven/Bilder/GPX-Routen) nicht verdrängen.
+  const legacy=sessions;
+  sessions=mergeSessionSets(Array.isArray(stored)?stored:[],legacy);
+  let initialWrite=await writeTrainingDBWithCleanup(sessions);sessions=initialWrite.data;
+  await recoverMissingCurvesFromImages();
+  initialWrite=await writeTrainingDBWithCleanup(sessions);sessions=initialWrite.data;
+  // Erst nach erfolgreicher Übernahme in IndexedDB den großen alten localStorage-Doppelbestand entfernen.
+  try{localStorage.removeItem(KEY);}catch(_){ }
+  dbReady=true;render();
+  const el=$('storageInfo');if(el)el.textContent=el.textContent.replace(/ · Speicherung:.*$/,'')+' · Speicherung: IndexedDB'+(initialWrite.cleaned?' · alter Bildspeicher automatisch bereinigt':'');
+ }catch(err){console.warn('IndexedDB nicht verfügbar; bisherige lokale Daten bleiben unverändert.',err);render();const el=$('storageInfo');if(el)el.textContent+=' · Hinweis: IndexedDB ist in diesem Browser-Kontext nicht verfügbar. Bitte Daten exportieren.';}
+}
+function render(){let n=sessions.length,dist=sessions.reduce((a,s)=>a+(Number(s.distance)||0),0),hrs=sessions.filter(s=>s.hr).map(s=>s.hr),elev=sessions.reduce((a,s)=>a+(Number(s.elev)||0),0),duration=sessions.reduce((a,s)=>a+(Number(s.duration)||0),0),steps=sessions.reduce((a,s)=>a+(Number(s.steps)||0),0),calories=sessions.reduce((a,s)=>a+(Number(s.calories)||0),0),cadences=sessions.filter(s=>s.cadence).map(s=>s.cadence),hrMaxima=sessions.filter(s=>s.hrMax).map(s=>s.hrMax),altitudeMaxima=sessions.filter(s=>s.altitudeMax).map(s=>s.altitudeMax);let approx=sessions.filter(s=>s.approximate).length,withSeries=sessions.filter(s=>s.series&&Object.values(s.series).some(v=>Array.isArray(v)&&v.length)).length,withGps=sessions.filter(s=>s.route&&s.route.length>1).length;$('storageInfo').textContent=`${n} gespeicherte Trainingseinheiten aus diesem Browser · ${withSeries} mit Kurvenwerten · ${approx} Kurven angenähert (*) · ${withGps} mit GPS-Strecke. Die App durchsucht nicht automatisch deinen Download- oder Dokumente-Ordner. ${archivedDemoCount?archivedDemoCount+' alte Demo-Einheiten wurden getrennt archiviert und zählen nicht zur Analyse.':''}`;$('stats').innerHTML=`<div class="stat"><b>${n}</b><span>Einheiten</span></div><div class="stat"><b>${dist.toFixed(2)} km</b><span>Gesamtdistanz</span></div><div class="stat"><b>${elev.toLocaleString('de-DE')} m</b><span>Gesamtanstieg</span></div><div class="stat"><b>${hrs.length?Math.round(hrs.reduce((a,b)=>a+b,0)/hrs.length)+' bpm':'–'}</b><span>Ø Puls je Einheit</span></div><div class="stat"><b>${Math.floor(duration/60)} h ${Math.round(duration%60)} min</b><span>Gesamtzeit</span></div><div class="stat"><b>${steps.toLocaleString('de-DE')||'–'}</b><span>Gesamtschritte</span></div><div class="stat"><b>${calories.toLocaleString('de-DE')||'–'} kcal</b><span>Gesamtkalorien</span></div><div class="stat"><b>${cadences.length?Math.round(cadences.reduce((a,b)=>a+b,0)/cadences.length):'–'}</b><span>Ø Kadenz</span></div>`;
+$('activityBreakdown').innerHTML=['Laufen','Gehen'].map(k=>{let a=sessions.filter(x=>x.kind===k),km=a.reduce((v,x)=>v+(Number(x.distance)||0),0),hm=a.reduce((v,x)=>v+(Number(x.elev)||0),0),mins=a.reduce((v,x)=>v+(Number(x.duration)||0),0);return `<div class="chartbox"><h3>${k}</h3><div class="compare-grid"><div class="compare-metric"><b>${a.length}</b><span>Einheiten</span></div><div class="compare-metric"><b>${km.toFixed(2)} km</b><span>Gesamtdistanz</span></div><div class="compare-metric"><b>${Math.round(hm)} m</b><span>Gesamtanstieg</span></div><div class="compare-metric"><b>${Math.floor(mins/60)} h ${Math.round(mins%60)} min</b><span>Gesamtzeit</span></div></div></div>`}).join('');
+$('sessions').innerHTML=sessions.length?sessions.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(s=>`<div class="session"><div><strong>${s.date} ${s.time?'· '+s.time:''} · ${s.kind}</strong><small>${s.source}${s.approximate?' · Kurve angenähert (*)':(s.series&&Object.values(s.series).some(v=>Array.isArray(v)&&v.length)?' · Messkurve vorhanden':' · keine Zeitreihe')} · ${s.distance||'–'} km · ${s.duration||'–'} min · Puls ${s.hr||'–'} / max. ${s.hrMax||'–'} bpm · Kadenz ${s.cadence||'–'} / max. ${s.cadenceMax||'–'} · Anstieg ${s.elev||'–'} m · ${s.calories||'–'} kcal · ${s.steps?s.steps.toLocaleString('de-DE')+' Schritte':'Schritte –'} · Höhe max. ${s.altitudeMax||'–'} m · ${s.route&&s.route.length>1?'GPS-Strecke vorhanden':'keine GPS-Strecke'}</small>${s.image?`<details><summary>Gespeichertes Foto anzeigen</summary><img src="${s.image}" alt="Trainings-Screenshot"></details>`:''}</div><button class="danger" onclick="removeSession(${s.id})">Löschen</button></div>`).join(''):'<div class="empty">Noch keine Einheiten gespeichert.</div>';
+drawCharts();progressSummary();renderTimeComparison();renderRouteMap()}
+function removeSession(id){sessions=sessions.filter(s=>s.id!==id);save()}
+function drawCharts(){let defs=[['hr','Herzfrequenz','bpm'],['pace','Tempo','min/km'],['cad','Schrittfrequenz','Schritte/min'],['alt','Höhenprofil','m']];let html='',has=false;let kinds=[...new Set(sessions.map(s=>s.kind||'Sonstiges'))].sort((a,b)=>a.localeCompare(b,'de'));kinds.forEach(kind=>{let group=sessions.filter(s=>(s.kind||'Sonstiges')===kind),section='';defs.forEach(([key,title,unit])=>{let rows=group.map((s,i)=>({s,i,v:(s.series&&Array.isArray(s.series[key])?s.series[key]:[]).map(Number).filter(Number.isFinite)})).filter(x=>x.v.length);if(!rows.length)return;has=true;let all=rows.flatMap(x=>x.v),min=Math.min(...all),max=Math.max(...all);if(min===max){min-=1;max+=1}let w=760,h=190,L=48,R=15,T=12,B=28,ih=h-T-B,y=v=>T+(max-v)/(max-min)*ih,x=(i,len)=>L+(len<=1?0:i/(len-1))*(w-L-R);let paths=rows.map(({s,i,v})=>{let p=v.map((a,j)=>(j?'L':'M')+x(j,v.length).toFixed(1)+','+y(a).toFixed(1)).join(' ');return `<path d="${p}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="2.4" stroke-dasharray="${s.approximate?'6 4':'none'}"/>`}).join('');let grid=[0,.25,.5,.75,1].map(t=>{let yy=T+t*ih,val=max-t*(max-min);return `<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#e7ece8"/><text x="${L-7}" y="${yy+4}" text-anchor="end" font-size="10" fill="#65736b">${val.toFixed(key==='pace'?1:0)}</text>`}).join('');let legends=rows.map(({s,i})=>`<span><i class="dot" style="background:${colors[i%colors.length]}"></i>${s.date}${s.time?' · '+s.time:''}${s.approximate?' *':''}</span>`).join('');section+=`<div class="chartbox"><h3>${title} (${unit})</h3><svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${kind}: ${title}">${grid}${paths}<text x="${L}" y="${h-7}" font-size="10">Messpunkt 1</text><text x="${w-R}" y="${h-7}" text-anchor="end" font-size="10">${Math.max(...rows.map(r=>r.v.length))} Messpunkte</text></svg><div class="legend">${legends}</div></div>`});if(section)html+=`<div class="card"><h2>${kind} – Leistungsverläufe</h2><p class="sub">Eigene Skalen und Kurvenvergleiche nur für ${kind.toLowerCase()}. Andere Trainingsarten werden nicht eingemischt.</p>${section}</div>`});$('charts').innerHTML=html;$('empty').style.display=has?'none':'block'}
+$('export').onclick=()=>{let a=document.createElement('a'),blob=new Blob([JSON.stringify(sessions,null,2)],{type:'application/json'});a.href=URL.createObjectURL(blob);a.download='meine-trainingsanalyse-daten.json';a.click();URL.revokeObjectURL(a.href)};
+$('restoreBackup').onclick=()=> $('backupFile').click();
+$('backupFile').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error('Die Datei enthält keine Trainingsliste.');if(!confirm(`${data.length} Einheiten aus dem Backup übernehmen? Vorhandene Einheiten bleiben erhalten; gleiche IDs werden nicht doppelt angelegt.`))return;const ids=new Set(sessions.map(x=>String(x.id)));const add=data.filter(x=>x&&x.id!==undefined&&!ids.has(String(x.id)));sessions=sessions.concat(add);save();alert(`${add.length} Einheiten aus dem Backup ergänzt.`);}catch(err){alert('Backup konnte nicht gelesen werden: '+err.message);}e.target.value='';});
+$('clear').onclick=()=>{if(confirm('Wirklich alle Trainingsdaten auf diesem Gerät löschen?')){sessions=[];save()}};
+$('form').addEventListener('reset',()=>{setTimeout(()=>{imageData='';$('preview').style.display='none';resetGraphTool();},0)});
+
+// Robuster Import: GPX/TCX mit GPS-Punkten, Zeit, Puls, Kadenz und Höhenprofil.
+function setField(id,val){if(val!==null&&val!==undefined&&val!==''&&$(id))$(id).value=val}
+function localName(el,name){return (el.localName||el.nodeName.split(':').pop()).toLowerCase()===name.toLowerCase()}
+function descendants(el,name){return [...el.getElementsByTagName('*')].filter(x=>localName(x,name))}
+function firstDesc(el,name){return descendants(el,name)[0]||null}
+function val(el,name){let x=firstDesc(el,name);return x?x.textContent.trim():''}
+function numOrNull(x){if(x===null||x===undefined||String(x).trim()==='')return null;let n=Number(String(x).replace(',','.'));return Number.isFinite(n)?n:null}
+function haversine(a,b){const r=x=>x*Math.PI/180,R=6371,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]),q=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))}
+function resampleTrack(points){
+ // Auch ohne Zeitstempel Höhen-, Puls- und Kadenzwerte übernehmen.
+ const out={hr:[],pace:[],cad:[],alt:[]};
+ const valid=points.filter(p=>Number.isFinite(p.t));
+ if(valid.length<2){for(const p of points){if(p.hr!=null)out.hr.push(p.hr);if(p.cad!=null)out.cad.push(p.cad);if(p.alt!=null)out.alt.push(p.alt)}return out}
+ let base=valid[0].t,end=valid[valid.length-1].t,samples=[];
+ for(let minute=0;minute<=Math.max(1,Math.ceil((end-base)/60));minute++){let target=base+minute*60,near=valid.reduce((a,b)=>Math.abs(b.t-target)<Math.abs(a.t-target)?b:a);samples.push(near)}
+ for(let i=0;i<samples.length;i++){let q=samples[i];if(q.hr!=null)out.hr.push(q.hr);if(q.cad!=null)out.cad.push(q.cad);if(q.alt!=null)out.alt.push(q.alt);if(i>0){let a=samples[i-1],dt=(q.t-a.t)/60,dd=(q.dist-a.dist);if(dt>0.05&&dd>0.002){let pace=dt/dd;if(pace>2&&pace<40)out.pace.push(pace)}}}
+ return out
+}
+function parseActivity(text,ext){let points=[],date='',dist=0,duration=0;
+ if(ext==='gpx'||ext==='tcx'||ext==='xml'){let doc=new DOMParser().parseFromString(text,'application/xml');if(doc.querySelector('parsererror'))throw Error('XML ungültig');
+  if(ext==='gpx'||(ext==='xml'&&descendants(doc,'trkpt').length)){
+   // GPX 1.0/1.1, mit oder ohne XML-Namespace; mehrere Tracks und Segmente.
+   let pts=descendants(doc,'trkpt');if(!pts.length)pts=descendants(doc,'rtept');if(!pts.length)pts=descendants(doc,'wpt');
+   let last=null,cum=0;
+   pts.forEach(pt=>{let lat=numOrNull(pt.getAttribute('lat')),lon=numOrNull(pt.getAttribute('lon'));if(lat===null||lon===null)return;
+    let ts=Date.parse(val(pt,'time')),alt0=numOrNull(val(pt,'ele'));if(!Number.isFinite(ts))ts=null;
+    let extNodes=[...pt.getElementsByTagName('*')];let findExt=name=>{let x=extNodes.find(n=>localName(n,name));return x?numOrNull(x.textContent):null};
+    let h=findExt('hr'),c=findExt('cadence');if(c===null)c=findExt('cad');
+    if(last)cum+=haversine([last.lat,last.lon],[lat,lon]);
+    points.push({lat,lon,t:ts===null?null:ts/1000,alt:alt0,hr:h!==null&&h>0?h:null,cad:c!==null&&c>0?c:null,dist:cum});last={lat,lon};
+   });
+   let metaTime=val(doc,'time');date=metaTime?metaTime.slice(0,10):'';
+  }else{
+   // TCX: Herzfrequenz und Höhe getrennt auslesen (Value unter HR ist kein Höhenwert!).
+   let pts=descendants(doc,'Trackpoint'),firstTime=null,lastTime=null,lastGps=null,cum=0;
+   pts.forEach(pt=>{let pos=firstDesc(pt,'Position'),lat=numOrNull(val(pos||pt,'LatitudeDegrees')),lon=numOrNull(val(pos||pt,'LongitudeDegrees'));
+    let time=Date.parse(val(pt,'Time')),d=numOrNull(val(pt,'DistanceMeters')),hrNode=firstDesc(pt,'HeartRateBpm'),h=hrNode?numOrNull(val(hrNode,'Value')):null,alt=numOrNull(val(pt,'AltitudeMeters')),cad0=numOrNull(val(pt,'RunCadence')),cad=cad0===null?null:cad0*2;
+    if(Number.isFinite(time)){if(firstTime===null)firstTime=time;lastTime=time}
+    if(d!==null&&d>=0)cum=Math.max(cum,d/1000);else if(Number.isFinite(lat)&&Number.isFinite(lon)&&lastGps)cum+=haversine(lastGps,[lat,lon]);
+    if(Number.isFinite(lat)&&Number.isFinite(lon))lastGps=[lat,lon];
+    points.push({lat,lon,t:Number.isFinite(time)?time/1000:null,alt:alt,hr:h!==null&&h>0?h:null,cad:cad!==null&&cad>0?cad:null,dist:cum});
+   });date=val(doc,'Id').slice(0,10)||'';if(firstTime!==null&&lastTime!==null)duration=(lastTime-firstTime)/60000;
+  }
+ }else{
+  const rows=text.trim().split(/\r?\n/).map(line=>line.split(/[,;\t]/));let headers=rows.shift().map(x=>x.trim().toLowerCase().replace(/["']/g,''));let idx=keys=>headers.findIndex(h=>keys.some(k=>h.includes(k)));let ti=idx(['timestamp','datetime','time','zeit']),hi=idx(['heart','heartrate','hr','puls']),ci=idx(['cadence','kadenz','step rate','schrittfrequenz']),ai=idx(['altitude','elevation','höhe','ele']),pi=idx(['pace','tempo']),di=idx(['distance','distanz']);
+  rows.forEach((r,i)=>{let t=ti>=0?Date.parse(r[ti]):NaN,hr=hi>=0?Number(r[hi]):NaN,cad=ci>=0?Number(r[ci]):NaN,alt=ai>=0?Number(r[ai]):NaN,d=di>=0?Number(r[di]):NaN,pace=pi>=0?Number(r[pi]):NaN;points.push({t:Number.isFinite(t)?t/1000:i*60,hr:Number.isFinite(hr)?hr:null,cad:Number.isFinite(cad)?cad:null,alt:Number.isFinite(alt)?alt:null,dist:Number.isFinite(d)?d/1000:0,pace:Number.isFinite(pace)?pace:null});});
+ }
+ let gps=points.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).map(p=>[p.lat,p.lon]);let timed=points.filter(p=>p.t!=null);if(timed.length>1){duration=duration||((timed[timed.length-1].t-timed[0].t)/60);if(!date)date=new Date(timed[0].t*1000).toISOString().slice(0,10)}
+ if(points.length){dist=Math.max(...points.map(p=>p.dist||0));if(!dist&&gps.length>1){for(let i=1;i<gps.length;i++)dist+=haversine(gps[i-1],gps[i])}}
+ let series=resampleTrack(points);if(ext==='csv'){series.pace=points.map(p=>p.pace).filter(x=>x>0);series.hr=points.map(p=>p.hr).filter(x=>x!=null);series.cad=points.map(p=>p.cad).filter(x=>x!=null);series.alt=points.map(p=>p.alt).filter(x=>x!=null)}
+ return {date,dist,duration,series,route:gps.length>1?gps:null,points};
+}
+// Reparaturversuch direkt im Browser: XML-BOM/Steuerzeichen/bare ampersands bereinigen;
+// bei weiterhin defektem XML Trackpunkte tolerant aus dem Rohtext retten.
+function parseGPXWithRecovery(raw){
+ let text=String(raw||'').replace(/^\uFEFF/,'').replace(/\u0000/g,'').replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+ text=text.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[\da-f]+;)/gi,'&amp;');
+ try{let parsed=parseActivity(text,'gpx');if(parsed.points&&parsed.points.length)return {...parsed,recovered:true};}catch(e){}
+ let starts=[...text.matchAll(/<(?:[\w.-]+:)?(?:trkpt|rtept)\b([^>]*)>/gi)];if(!starts.length)starts=[...text.matchAll(/<(?:[\w.-]+:)?wpt\b([^>]*)>/gi)];
+ if(!starts.length)throw Error('Keine Trackpunkte im GPX-Text gefunden');
+ const points=[];let cum=0,last=null,date='',firstTime=null,lastTime=null;
+ const tag=(fragment,name)=>{let re=new RegExp('<(?:[\\w.-]+:)?'+name+'\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?'+name+'\\s*>','i'),m=fragment.match(re);return m?m[1].replace(/<[^>]*>/g,'').trim():''};
+ for(let i=0;i<starts.length;i++){
+  const m=starts[i],attrs=m[1]||'',body=text.slice(m.index+m[0].length,i+1<starts.length?starts[i+1].index:text.length);
+  const attr=name=>{let a=attrs.match(new RegExp('(?:^|\\s)'+name+'\\s*=\\s*["\\\']([^"\\\']+)["\\\']','i'));return a?numOrNull(a[1]):null};
+  const lat=attr('lat'),lon=attr('lon');if(lat===null||lon===null||Math.abs(lat)>90||Math.abs(lon)>180)continue;
+  const alt=numOrNull(tag(body,'ele')),timeText=tag(body,'time'),ts=timeText?Date.parse(timeText):NaN;
+  const hr0=numOrNull(tag(body,'hr')),cad0=numOrNull(tag(body,'cadence'))??numOrNull(tag(body,'cad'));
+  if(last)cum+=haversine([last.lat,last.lon],[lat,lon]);
+  const point={lat,lon,t:Number.isFinite(ts)?ts/1000:null,alt,hr:hr0!==null&&hr0>0?hr0:null,cad:cad0!==null&&cad0>0?cad0:null,dist:cum};
+  points.push(point);last=point;
+  if(Number.isFinite(ts)){if(firstTime===null)firstTime=ts;lastTime=ts;if(!date)date=new Date(ts).toISOString().slice(0,10)}
+ }
+ if(!points.length)throw Error('Die GPX-Datei enthält keine verwertbaren GPS-Koordinaten');
+ const series=resampleTrack(points),gps=points.map(p=>[p.lat,p.lon]);
+ const duration=firstTime!==null&&lastTime!==null?Math.max(0,(lastTime-firstTime)/60000):0;
+ return {date,dist:cum,duration,series,route:gps.length>1?gps:null,points,recovered:true};
+}
+function saveImportedActivity(parsed,fileName,source='GPX-Reparatur'){
+ const avg=k=>{const a=(parsed.series&&parsed.series[k]||[]).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:0};
+ const pace=avg('pace')||(parsed.duration>0&&parsed.dist>0?parsed.duration/parsed.dist:0);
+ const date=parsed.date||new Date().toISOString().slice(0,10);
+ const sameDistance=sessions.filter(s=>Math.abs((s.distance||0)-(parsed.dist||0))<0.03);
+ const existing=sameDistance.find(s=>s.fileName===fileName)||sameDistance.find(s=>s.date===date&&(!s.route||s.route.length<2))||(()=>{const missing=sameDistance.filter(s=>!s.route||s.route.length<2);return missing.length===1?missing[0]:null})();
+ if(existing){
+  let changed=false;
+  // Häufig wurde ein Training schon als Datensatz gespeichert, aber die GPS-Linie fehlte.
+  // Beim erneuten Import wird dann derselbe Eintrag ergänzt statt als Duplikat verworfen.
+  if((!existing.route||existing.route.length<2)&&parsed.route&&parsed.route.length>1){existing.route=parsed.route;changed=true;}
+  if((!existing.series||!existing.series.hr||!existing.series.hr.length)&&parsed.series&&parsed.series.hr&&parsed.series.hr.length){existing.series=existing.series||{};existing.series.hr=parsed.series.hr;changed=true;}
+  for(const k of ['pace','cad','alt'])if((!existing.series||!existing.series[k]||!existing.series[k].length)&&parsed.series&&parsed.series[k]&&parsed.series[k].length){existing.series=existing.series||{};existing.series[k]=parsed.series[k];changed=true;}
+  if(!existing.duration&&parsed.duration){existing.duration=+parsed.duration.toFixed(1);changed=true;}
+  if(!existing.distance&&parsed.dist){existing.distance=+parsed.dist.toFixed(2);changed=true;}
+  if(!existing.hr&&avg('hr')){existing.hr=Math.round(avg('hr'));changed=true;}
+  if(!existing.cadence&&avg('cad')){existing.cadence=Math.round(avg('cad'));changed=true;}
+  if(!existing.elev&&parsed.series&&parsed.series.alt&&parsed.series.alt.length){existing.elev=Math.round(Math.max(...parsed.series.alt)-Math.min(...parsed.series.alt));changed=true;}
+  if(changed){existing.source=(existing.source||'')+' + GPS ergänzt';save();return 'updated';}
+  return 'duplicate';
+ }
+ sessions.push({id:Date.now()+Math.floor(Math.random()*10000),date,source,kind:'Laufen',distance:+(parsed.dist||0).toFixed(2),duration:+(parsed.duration||0).toFixed(1),hr:Math.round(avg('hr')),pace:pace||null,paceLabel:pace?`${Math.floor(pace)}:${String(Math.round((pace%1)*60)).padStart(2,'0')}`:'',cadence:Math.round(avg('cad')),elev:(parsed.series&&parsed.series.alt&&parsed.series.alt.length)?Math.round(Math.max(...parsed.series.alt)-Math.min(...parsed.series.alt)):0,image:'',series:parsed.series||{hr:[],pace:[],cad:[],alt:[]},route:parsed.route||null,fileName});
+ save();return 'added';
+}
+function showGpsRepair(files){
+ failedGpsFiles=files||[];
+ const box=$('repairBox');
+ if(failedGpsFiles.length){box.hidden=false;$('repairText').textContent=failedGpsFiles.length===1?`„${failedGpsFiles[0].name}“ konnte nicht verarbeitet werden.`:`${failedGpsFiles.length} GPX-Dateien konnten nicht verarbeitet werden.`;}
+ else{box.hidden=true;}
+}
+function sendFailedGpsToVisualizer(){
+ if(!failedGpsFiles.length){alert('Es gibt keine fehlerhaften GPX-Dateien zum Reparieren.');return;}
+ const total=failedGpsFiles.reduce((n,f)=>n+f.size,0);
+ if(failedGpsFiles.length>10||total>10*1024*1024){alert('GPS Visualizer akzeptiert maximal 10 Dateien und insgesamt 10 MB pro Umwandlung. Bitte wähle weniger oder kleinere GPX-Dateien aus.');return;}
+ try{
+  const form=document.createElement('form');form.method='POST';form.enctype='multipart/form-data';form.action='https://www.gpsvisualizer.com/convert?convert_format=gpx';form.target='_blank';form.style.display='none';
+  const addHidden=(name,value)=>{const x=document.createElement('input');x.type='hidden';x.name=name;x.value=value;form.appendChild(x)};
+  addHidden('convert_format','gpx');addHidden('format','gpx');addHidden('convert_output','gpx');
+  failedGpsFiles.forEach((file,i)=>{
+   const input=document.createElement('input');input.type='file';input.name='uploaded_file_'+(i+1);
+   const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;form.appendChild(input);
+  });
+  document.body.appendChild(form);form.submit();form.remove();
+  $('ocrStatus').textContent='GPS Visualizer wurde in einem neuen Tab geöffnet. Nach dem Download kommst du hierher zurück und wählst die reparierte Datei über „Reparierte GPX auswählen“ aus; sie wird dann automatisch gespeichert.';
+ }catch(err){
+  console.error(err);
+  $('ocrStatus').textContent='Automatischer Datei-Upload wurde vom Browser nicht unterstützt. Öffne GPS Visualizer und wähle die Datei dort manuell aus.';
+  window.open('https://www.gpsvisualizer.com/convert?convert_format=gpx','_blank','noopener');
+ }
+}
+$('repairGps').addEventListener('click',sendFailedGpsToVisualizer);
+$('pickRepairedGps').addEventListener('click',()=>$('repairedGpsFile').click());
+$('repairedGpsFile').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ $('ocrStatus').textContent='Reparierte GPX-Datei wird eingelesen …';
+ try{const parsed=parseGPXWithRecovery(await file.text());if(!parsed.points.length)throw Error('Keine Trackpunkte gefunden');
+  const result=saveImportedActivity(parsed,file.name,'GPS Visualizer / GPX-Reparatur');
+  $('ocrStatus').textContent=result==='added'?`Fertig: ${file.name} wurde importiert (${parsed.dist.toFixed(2)} km, ${parsed.points.length} GPS-Punkte).`:result==='updated'?`Fertig: Der bestehende Eintrag ${file.name} wurde um die GPS-Strecke ergänzt. Die Karte wurde aktualisiert.`:`Diese Datei ist bereits vollständig in deiner Trainingshistorie vorhanden.`;
+  showGpsRepair([]);
+ }catch(err){$('ocrStatus').textContent='Die heruntergeladene Datei konnte auch nach dem Reparaturversuch nicht importiert werden: '+err.message;}
+ e.target.value='';
+});
+$('activityFile').addEventListener('change',async e=>{
+ const files=[...e.target.files];if(!files.length)return;$('ocrStatus').textContent='Trainingsdatei(en) werden analysiert …';showGpsRepair([]);
+ const parsedItems=[],badGps=[],otherErrors=[];
+ for(const f of files){
+  const ext=f.name.split('.').pop().toLowerCase();
+  try{
+   if(!['gpx','tcx','csv','xml'].includes(ext))throw Error('Nicht unterstütztes Format');
+   const content=await f.text();
+   let parsed;
+   try{parsed=parseActivity(content,ext);if(!parsed.points.length)throw Error('Keine Trackpunkte gefunden');}
+   catch(primaryError){
+    if(ext!=='gpx')throw primaryError;
+    parsed=parseGPXWithRecovery(content);
+    if(!parsed.points.length)throw primaryError;
+   }
+   parsedItems.push({file:f.name,parsed,recovered:!!parsed.recovered});
+  }catch(err){
+   if(ext==='gpx')badGps.push(f);else otherErrors.push(`${f.name}: ${err.message}`);
+  }
+ }
+ if(parsedItems.length===1&&files.length===1&&['gpx','xml'].includes(files[0].name.split('.').pop().toLowerCase())){
+  const {parsed,file}=parsedItems[0];const result=saveImportedActivity(parsed,file,parsed.recovered?'GPX lokal repariert':'GPX Import');
+  $('ocrStatus').textContent=result==='added'?`${file} wurde importiert (${parsed.dist.toFixed(2)} km, ${parsed.points.length} GPS-Punkte${parsed.route?' und GPS-Strecke':' – keine Kartenkoordinaten gefunden'}).`:result==='updated'?`${file}: Der bereits vorhandene Trainingseintrag wurde um GPS-Strecke und verfügbare Messwerte ergänzt.`:`${file} ist bereits vollständig vorhanden.`;
+ }else if(parsedItems.length===1&&files.length===1){
+  const {parsed}=parsedItems[0];setField('date',parsed.date);setField('distance',parsed.dist?parsed.dist.toFixed(2):'');setField('duration',parsed.duration?parsed.duration.toFixed(1):'');
+  let avg=k=>{let a=parsed.series[k];return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):''};setField('hr',avg('hr'));setField('cadence',avg('cad'));setField('elev',parsed.series.alt.length?Math.round(Math.max(...parsed.series.alt)-Math.min(...parsed.series.alt)):'' );
+  setField('hrSeries',parsed.series.hr.join(','));setField('cadSeries',parsed.series.cad.join(','));setField('altSeries',parsed.series.alt.join(','));setField('paceSeries',parsed.series.pace.join(','));
+  if(parsed.series.pace.length){let p=parsed.series.pace.reduce((a,b)=>a+b,0)/parsed.series.pace.length;setField('pace',`${Math.floor(p)}:${String(Math.round((p%1)*60)).padStart(2,'0')}`)}
+  importedRoute=parsed.route;$('ocrStatus').textContent=`${parsedItems[0].file}: ${parsed.points.length} Trackpunkte${parsed.route?' und GPS-Strecke':' (keine GPS-Koordinaten)'} gefunden. Werte prüfen und dann „Training speichern“ drücken.`;
+ }else if(parsedItems.length){
+  let added=0,skipped=[];
+  let updated=0;
+  for(const {file,parsed} of parsedItems){
+   const result=saveImportedActivity(parsed,file,parsed.recovered?'GPX lokal repariert':'GPX/TCX Import');
+   if(result==='added')added++;else if(result==='updated')updated++;else skipped.push(file+' (bereits vollständig vorhanden)');
+  }
+  $('ocrStatus').textContent=`Import abgeschlossen: ${added} neu hinzugefügt, ${updated} bestehende Einträge ergänzt.${skipped.length?' Unverändert: '+skipped.join(', '):''}`;
+ }else if(!badGps.length){$('ocrStatus').textContent='Keine Datei konnte importiert werden. '+otherErrors.join(' · ');}
+ if(badGps.length){showGpsRepair(badGps);$('ocrStatus').textContent+=(parsedItems.length?' ':'')+`${badGps.length} GPX-Datei(en) konnten lokal nicht gelesen werden. Du kannst sie mit einem Klick über GPS Visualizer reparieren lassen.`;}
+ if(otherErrors.length)$('ocrStatus').textContent+=' Weitere Fehler: '+otherErrors.join(' · ');
+ e.target.value='';
+});
+
+// Karte: alle importierten GPS-Strecken werden auf einer gemeinsamen Karte angezeigt.
+function renderRouteMap(){let el=$('routeMap');if(!el)return;let available=sessions.map((s,i)=>({s,i})).filter(x=>x.s.route&&x.s.route.length>1).map(x=>({...x,route:x.s.route.map(p=>Array.isArray(p)?[Number(p[0]),Number(p[1])]:[Number(p.lat??p.latitude),Number(p.lon??p.lng??p.longitude)]).filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]))})).filter(x=>x.route.length>1);$('mapLegend').innerHTML=available.map(({s,i})=>`<span><i class="dot" style="background:${colors[i%colors.length]}"></i>${s.date} · ${s.kind} · ${s.distance||'–'} km</span>`).join('');if(!available.length){el.innerHTML='<div class="empty">Noch keine GPS-Strecken vorhanden. Importiere eine GPX- oder TCX-Datei mit GPS-Koordinaten (Breiten-/Längengrad). Wenn eine Einheit schon in der Liste steht, aber keine Linie hat, importiere dieselbe GPX-Datei erneut – die App ergänzt dann den vorhandenen Eintrag.</div>';return;}if(!window.L){if(!document.getElementById('leafletCss')){let l=document.createElement('link');l.id='leafletCss';l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(l)}if(!document.getElementById('leafletJs')){let sc=document.createElement('script');sc.id='leafletJs';sc.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';sc.onload=renderRouteMap;sc.onerror=()=>{const alt=document.createElement('script');alt.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';alt.onload=renderRouteMap;alt.onerror=()=>{el.innerHTML='<div class="empty">Die GPS-Strecke ist gespeichert, aber die Kartenbibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen und die App neu öffnen.</div>';};document.head.appendChild(alt);};document.head.appendChild(sc)}el.innerHTML='<div class="empty">Kartenbibliothek wird geladen …</div>';return;}if(!routeMap){el.innerHTML='';routeMap=L.map(el).setView([46.5,11.3],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(routeMap)}routeLayers.forEach(l=>routeMap.removeLayer(l));routeLayers=[];let bounds=[];available.forEach(({s,i,route})=>{let c=colors[i%colors.length],line=L.polyline(route,{color:c,weight:4,opacity:.85}).addTo(routeMap).bindPopup(`${s.date} · ${s.kind} · ${s.distance||'–'} km`);routeLayers.push(line);bounds.push(...route)});if(bounds.length)routeMap.fitBounds(bounds,{padding:[20,20]});setTimeout(()=>routeMap.invalidateSize(),100)}
+
+$('ocr').onclick=async()=>{if(!imageData){$('ocrStatus').textContent='Bitte zuerst einen Screenshot auswählen.';return}$('ocrStatus').textContent='Texterkennung der Kennzahlen wird geladen …';try{const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=imageData});const keys=await readScreenshotMetrics(img);const date=await detectDateFromScreenshot(img);$('ocrStatus').textContent=keys.length?'Kennzahlen ergänzt: '+keys.join(', ')+'. '+(date?'Bilddatum erkannt. ':'')+'Bitte Werte kontrollieren und Training speichern.':'Keine sicheren Kennzahlen erkannt. Bitte Werte kontrollieren oder manuell eintragen.'}catch(e){$('ocrStatus').textContent='Texterkennung nicht verfügbar. Prüfe die Internetverbindung oder trage die Werte manuell ein.'}}
+
+function renderTimeComparison(){
+ const target=Math.max(1,Number($('compareTarget').value)||45),kind=$('compareKind').value;
+ const rows=sessions.filter(s=>(kind==='Alle'||s.kind===kind)&&Number(s.duration)>0&&Number(s.distance)>0).sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
+ const el=$('timeComparison');
+ if(!rows.length){el.innerHTML=`<div class="empty">Noch keine Einheiten mit Distanz und Dauer für ${kind==='Alle'?'diese Trainingsarten':kind+'-Einheiten'}. Speichere weitere Trainings oder wähle eine andere Trainingsart.</div>`;return;}
+ const norm=s=>Number(s.distance)/Number(s.duration)*target;
+ const fmtMin=m=>{let mm=Math.floor(m),ss=Math.round((m-mm)*60);if(ss===60){mm++;ss=0}return `${mm}:${String(ss).padStart(2,'0')} min`};
+ let html=`<div class="notice">${rows.length} Einheit${rows.length===1?'':'en'} berücksichtigt · tatsächliche Dauern dürfen abweichen · auf ${fmtMin(target)} normiert</div>`;
+ if(rows.length===1){let a=rows[0];html+=`<div class="compare-row"><div class="compare-head"><span>${a.date} · ${a.kind}</span><span>${fmtMin(Number(a.duration))}</span></div><div class="compare-grid"><div class="compare-metric"><b>${Number(a.distance).toFixed(2)} km</b><span>Tatsächliche Distanz</span></div><div class="compare-metric"><b>${norm(a).toFixed(2)} km</b><span>Auf ${fmtMin(target)} normiert</span></div><div class="compare-metric"><b>${(Number(a.distance)/Number(a.duration)*60).toFixed(2)} km/h</b><span>Durchschnittsgeschwindigkeit</span></div></div></div><p class="sub" style="margin-top:10px">Für einen Leistungsvergleich brauchst du mindestens eine zweite Einheit derselben Trainingsart.</p>`;}
+ for(let i=1;i<rows.length;i++){let prev=rows[i-1],cur=rows[i],a=norm(prev),b=norm(cur),diff=b-a,pct=a?diff/a*100:0,cls=diff>0.005?'positive':diff<-.005?'negative':'';let word=diff>0.005?'mehr Distanz':diff<-.005?'weniger Distanz':'praktisch gleich viel';html+=`<div class="compare-row"><div class="compare-head"><span>${prev.date} → ${cur.date}</span><span class="${cls}">${diff>0?'+':''}${diff.toFixed(2)} km (${pct>0?'+':''}${pct.toFixed(1)}%)</span></div><div class="compare-grid"><div class="compare-metric"><b>${Number(prev.distance).toFixed(2)} → ${Number(cur.distance).toFixed(2)} km</b><span>Tatsächliche Distanz</span></div><div class="compare-metric"><b>${a.toFixed(2)} → ${b.toFixed(2)} km</b><span>Distanz bei ${fmtMin(target)}</span></div><div class="compare-metric"><b>${Number(prev.duration).toFixed(1)} → ${Number(cur.duration).toFixed(1)} min</b><span>Tatsächliche Dauer</span></div></div><p style="margin:9px 0 0;font-size:13px">${cur.date}: ${word} in vergleichbarer Zeit. ${diff>0.005?'Das entspricht einer rechnerischen Verbesserung der Geschwindigkeit.':diff<-.005?'Die Durchschnittsgeschwindigkeit war rechnerisch niedriger.':'Die Leistung ist auf diesem Vergleichsniveau nahezu unverändert.'}</p></div>`;}
+ el.innerHTML=html;
+}
+['compareTarget','compareKind'].forEach(id=>$(id).addEventListener('change',renderTimeComparison));
+
+function progressSummary(){let blocks=['Laufen','Gehen'].map(kind=>{let a=sessions.filter(x=>x.kind===kind).slice().sort((x,y)=>x.date.localeCompare(y.date));if(a.length<2)return `<p><b>${kind}:</b> Noch mindestens zwei Einheiten nötig.</p>`;let first=a[0],last=a[a.length-1],msg=[];if(first.hr&&last.hr)msg.push(`Ø Puls ${first.hr} → ${last.hr} bpm`);if(first.pace&&last.pace)msg.push(`Tempo ${first.pace.toFixed(2)} → ${last.pace.toFixed(2)} min/km`);if(first.cadence&&last.cadence)msg.push(`Kadenz ${first.cadence} → ${last.cadence} Schritte/min`);return `<p><b>${kind} (${first.date} bis ${last.date}):</b> ${msg.join(' · ')||'Noch keine vergleichbaren Kennzahlen.'}</p>`}).join('');$('progress').innerHTML=blocks+'<p class="sub">Laufen und Gehen werden getrennt ausgewertet.</p>'}
+
+// Fünf bereits vorhandene Trainingseinheiten automatisch übernehmen (nur bei leerem Speicher).
+// Kurvenwerte sind aus Screenshots visuell angenähert, keine originalen Sensor-Exports.
+const STARTDATEN=[{"id":1763000000001,"date":"2026-11-08","source":"GloryFitPro","kind":"Gehen","distance":4.05,"duration":44.55,"hr":103,"pace":10.9833,"paceLabel":"10:59","cadence":113,"elev":198,"image":"","time":"09:26","series":{"hr":[93.3,94.3,98.3,96.3,99.3,101.3,98.3,102.3,111.3,113.3,108.3,112.3,108.3,103.3,103.3,107.3,106.3,104.3,100.3,98.3,99.3,99.3,96.3,102.3,106.3,108.3,105.3,105.3,104.3,105.3,112.3,114.3,113.3,109.3,101.3,99.3,98.3,100.3,102.3,104.3,98.3,94.3,95.3,97.3,101.3,105.3],"pace":[10.78,11.32,11.08,11.37,11.45,11.66,11.42,10.74,10.37,10.71,10.7,10.15,10.96,11.19,11.8,11.54,11.61,11.38,11.17,10.27,10.18,10.6,10.81,10.49,10.82,11.76,11.85,11.62,10.99,10.99,10.96,10.51,9.95,10.64,10.72,10.95,10.99,11.55,11.81,11.49,10.73,10.96,10.97,10.58,10.1,10.53],"cad":[111.2,111.2,107.2,108.2,112.2,117.2,120.2,119.2,117.2,115.2,116.2,119.2,111.2,111.2,107.2,107.2,110.2,112.2,109.2,111.2,113.2,117.2,118.2,118.2,113.2,114.2,116.2,115.2,108.2,106.2,110.2,107.2,112.2,108.2,111.2,113.2,119.2,119.2,116.2,114.2,116.2,117.2,113.2,110.2,110.2,107.2],"alt":[1068.5,1068.0,1067.0,1065.1,1062.6,1059.8,1057.4,1055.9,1055.5,1055.7,1056.0,1055.7,1054.6,1052.7,1050.5,1048.6,1047.5,1047.3,1047.7,1048.1,1047.7,1046.4,1044.3,1041.7,1039.3,1037.7,1036.8,1036.5,1036.1,1035.0,1032.9,1029.9,1026.5,1023.4,1021.0,1019.5,1018.5,1017.6,1016.0,1013.6,1010.4,1006.8,1004.0,1004.0,1004.0,1004.0]},"approximate":true},{"id":1763000000002,"date":"2026-11-09","source":"GloryFitPro","kind":"Gehen","distance":3.94,"duration":47.58,"hr":103,"pace":12.0667,"paceLabel":"12:04","cadence":104,"elev":178,"image":"","time":"09:12","series":{"hr":[101.2,104.2,104.2,96.2,98.2,98.2,94.2,98.2,99.2,100.2,103.2,102.2,104.2,100.2,105.2,105.2,110.2,111.2,110.2,109.2,106.2,103.2,104.2,104.2,102.2,105.2,101.2,99.2,96.2,99.2,96.2,98.2,102.2,104.2,109.2,108.2,108.2,105.2,106.2,107.2,112.2,108.2,106.2,105.2,102.2,96.2,96.2,98.2,102.2],"pace":[11.52,12.09,11.96,12.02,12.43,12.63,12.82,12.5,11.84,11.96,11.78,11.58,11.39,11.51,12.13,12.52,12.53,12.3,12.69,12.44,11.9,11.63,11.89,11.49,11.39,11.33,12.09,12.49,12.63,12.46,12.53,12.81,12.53,11.73,11.23,11.67,11.78,11.64,11.64,12.37,12.88,12.98,12.52,12.05,12.35,12.27,11.7,11.22,11.4],"cad":[108.5,105.5,102.5,97.5,98.5,95.5,102.5,101.5,99.5,101.5,102.5,107.5,108.5,111.5,108.5,103.5,105.5,104.5,101.5,99.5,99.5,100.5,100.5,102.5,102.5,100.5,103.5,104.5,112.5,110.5,109.5,108.5,109.5,106.5,105.5,101.5,97.5,97.5,97.5,100.5,100.5,103.5,104.5,105.5,110.5,110.5,105.5,108.5,107.5],"alt":[1002.0,1002.0,1002.0,1002.0,999.1,995.8,992.5,989.9,988.0,986.9,986.1,985.1,983.5,981.1,978.2,975.1,972.3,970.4,969.4,969.0,968.9,968.4,967.2,965.3,963.0,960.8,959.1,958.2,958.2,958.6,959.0,958.7,957.7,955.9,953.8,951.8,950.5,950.0,950.0,950.2,950.0,949.0,947.1,944.6,941.8,939.4,937.6,936.6,936.0]},"approximate":true},{"id":1763000000003,"date":"2026-11-11","source":"GloryFitPro","kind":"Gehen","distance":4.36,"duration":50.32,"hr":106,"pace":11.5333,"paceLabel":"11:32","cadence":105,"elev":206,"image":"","time":"09:39","series":{"hr":[102.4,108.4,111.4,109.4,110.4,106.4,102.4,106.4,104.4,107.4,105.4,107.4,104.4,97.4,95.4,97.4,103.4,103.4,109.4,110.4,111.4,107.4,109.4,107.4,110.4,110.4,112.4,113.4,113.4,106.4,104.4,99.4,99.4,104.4,106.4,105.4,100.4,102.4,99.4,99.4,103.4,107.4,106.4,109.4,112.4,108.4,105.4,106.4,104.4,109.4,105.4],"pace":[10.92,11.02,11.09,11.11,11.35,12.25,12.15,11.87,11.88,11.58,11.88,11.55,10.94,10.94,11.05,11.63,11.43,11.46,11.98,12.46,12.28,11.87,11.58,11.21,11.34,11.03,10.9,10.97,11.53,11.75,11.68,11.8,12.23,12.27,11.69,11.35,11.2,11.41,11.26,10.87,10.95,11.38,11.8,11.99,11.77,12.13,12.29,11.85,11.39,11.04,11.0],"cad":[105.6,111.6,113.6,109.6,109.6,107.6,106.6,106.6,104.6,100.6,97.6,101.6,102.6,102.6,102.6,100.6,103.6,106.6,114.6,113.6,108.6,108.6,103.6,106.6,106.6,101.6,95.6,98.6,102.6,100.6,104.6,105.6,104.6,106.6,111.6,111.6,108.6,108.6,105.6,107.6,105.6,104.6,102.6,95.6,95.6,102.6,100.6,104.6,101.6,104.6,107.6],"alt":[1160.0,1159.9,1158.3,1156.0,1153.0,1149.4,1145.8,1142.6,1140.0,1138.1,1136.6,1134.9,1132.8,1129.8,1126.1,1121.8,1117.4,1113.5,1110.2,1107.6,1105.4,1103.1,1100.4,1096.9,1092.7,1088.1,1083.5,1079.3,1075.9,1073.3,1071.2,1069.1,1066.7,1063.5,1059.8,1055.6,1051.6,1048.1,1045.3,1043.4,1042.0,1040.7,1039.0,1036.6,1033.5,1030.0,1026.6,1023.7,1021.4,1020.0,1018.9]},"approximate":true},{"id":1763000000004,"date":"2026-11-12","source":"GloryFitPro","kind":"Laufen","distance":3.51,"duration":28.28,"hr":145,"pace":8.0333,"paceLabel":"8:02","cadence":132,"elev":170,"image":"","time":"09:12","series":{"hr":[133.6,139.6,138.6,141.6,146.6,148.6,151.6,146.6,143.6,145.6,147.6,144.6,144.6,143.6,147.6,152.6,154.6,151.6,152.6,151.6,148.6,143.6,139.6,140.6,142.6,138.6,139.6,139.6,144.6],"pace":[7.76,7.2,7.19,8.69,8.79,8.82,8.21,7.14,7.46,7.69,8.18,9.13,8.51,8.17,7.35,7.17,7.75,7.79,9.03,8.86,7.96,7.92,7.22,7.4,8.21,8.46,9.15,8.21,7.44],"cad":[128.6,131.6,133.6,134.6,140.6,131.6,132.6,131.6,126.6,128.6,130.6,128.6,134.6,137.6,137.6,129.6,133.6,129.6,126.6,131.6,131.6,130.6,134.6,139.6,134.6,134.6,127.6,127.6,127.6],"alt":[1031.2,1028.9,1024.8,1019.2,1014.3,1011.8,1010.9,1009.1,1005.2,1000.2,996.7,995.2,994.2,991.1,985.8,980.3,976.5,974.3,971.3,965.9,959.0,952.9,949.0,946.0,941.7,935.3,928.6,926.0,926.0]},"approximate":true},{"id":1763000000005,"date":"2026-11-12","source":"GloryFitPro","kind":"Laufen","distance":6.19,"duration":45.02,"hr":152,"pace":7.2667,"paceLabel":"7:16","cadence":141,"elev":245,"image":"","time":"10:04","series":{"hr":[140.7,146.7,145.7,143.7,142.7,142.7,144.7,146.7,152.7,157.7,155.7,156.7,154.7,153.7,159.7,157.7,162.7,158.7,159.7,155.7,153.7,152.7,149.7,149.7,150.7,152.7,153.7,151.7,149.7,155.7,156.7,159.7,161.7,158.7,154.7,151.7,154.7,151.7,157.7,154.7,151.7,147.7,140.7,142.7,140.7,147.7],"pace":[7.3,6.92,6.77,6.27,6.74,7.27,7.52,7.84,7.86,8.19,7.67,6.98,6.73,6.7,6.54,6.28,6.98,7.57,7.85,8.04,8.04,7.85,7.52,6.97,6.61,6.67,6.81,6.67,7.14,7.8,8.12,7.97,7.68,7.52,7.21,6.87,6.42,6.36,7.01,6.94,7.24,8.19,8.16,7.76,7.67,7.08],"cad":[138.0,140.0,138.0,137.0,135.0,134.0,141.0,143.0,141.0,141.0,148.0,151.0,149.0,142.0,141.0,139.0,142.0,136.0,138.0,133.0,135.0,144.0,142.0,143.0,143.0,147.0,146.0,146.0,141.0,141.0,141.0,138.0,136.0,132.0,133.0,139.0,140.0,141.0,143.0,146.0,143.0,146.0,144.0,145.0,143.0,140.0],"alt":[1237.0,1237.0,1234.4,1230.2,1225.1,1219.6,1214.5,1210.2,1206.9,1204.1,1201.5,1198.2,1194.2,1189.4,1184.3,1179.7,1176.0,1173.3,1171.3,1169.4,1167.0,1163.7,1159.7,1155.5,1151.7,1148.7,1146.6,1145.2,1143.8,1141.8,1138.9,1135.1,1131.0,1127.1,1124.0,1121.7,1120.0,1118.1,1115.6,1112.0,1107.5,1102.6,1098.0,1094.0,1090.9,1088.4]},"approximate":true}];
+// Frühere künstliche Demo-Einheiten aus der alten Schaltfläche erkennen und getrennt archivieren.
+// Die Erkennung ist absichtlich streng (Datum, Kennzahlen und vier Reihen mit je 24 Demo-Punkten).
+const DEMO_ARCHIVE_KEY=KEY+'_demo_archive';
+const DEMO_SIGNATURES=[
+ {date:'2026-11-08',distance:4.05,duration:44.5,source:'GloryFitPro',hr:103},
+ {date:'2026-11-09',distance:3.94,duration:47.6,source:'GloryFitPro',hr:105},
+ {date:'2026-11-11',distance:4.36,duration:50.3,source:'Polar',hr:106},
+ {date:'2026-11-12',distance:3.51,duration:28.3,source:'Garmin',hr:145},
+ {date:'2026-11-13',distance:6.19,duration:45,source:'Polar',hr:152}
+];
+function isOldDemo(s){return DEMO_SIGNATURES.some(d=>s.date===d.date&&s.source===d.source&&Math.abs((Number(s.distance)||0)-d.distance)<0.006&&Math.abs((Number(s.duration)||0)-d.duration)<0.16&&Number(s.hr)===d.hr&&Number(s.cadence)===130&&Number(s.elev)===180&&['hr','pace','cad','alt'].every(k=>Array.isArray(s.series&&s.series[k])&&s.series[k].length===24));}
+let archivedDemos=[];try{archivedDemos=JSON.parse(localStorage.getItem(DEMO_ARCHIVE_KEY)||'[]');if(!Array.isArray(archivedDemos))archivedDemos=[];}catch(e){archivedDemos=[];}
+const oldDemoRows=sessions.filter(isOldDemo);
+if(oldDemoRows.length){archivedDemos=archivedDemos.concat(oldDemoRows);sessions=sessions.filter(s=>!isOldDemo(s));try{localStorage.setItem(KEY,JSON.stringify(sessions));localStorage.setItem(DEMO_ARCHIVE_KEY,JSON.stringify(archivedDemos));}catch(e){}}
+archivedDemoCount=archivedDemos.length;
+if(savedRaw===null){sessions=STARTDATEN;try{localStorage.setItem(KEY,JSON.stringify(sessions));}catch(e){}}
+$('importBase').onclick=()=>{const known=new Set(sessions.map(s=>s.id));const add=STARTDATEN.filter(s=>!known.has(s.id));if(!add.length){alert('Die fünf bisherigen Einheiten sind bereits vorhanden.');return}sessions=sessions.concat(add);save();alert(add.length+' bisherige Einheiten wurden ergänzt.');};
+storageReadyPromise=initializeTrainingStorage();
+</script>
+</body></html>
