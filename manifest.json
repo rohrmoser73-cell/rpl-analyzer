@@ -3,7 +3,7 @@
   "id": "/rpl-analyzer/",
   "name": "Run pictures LeistungsAnalyzer",
   "short_name": "RPL Analyzer",
-  "description": "Trainingsanalyse für Lauf- und Gehtraining mit GPX-Import, Bildern und Leistungsvergleichen.",
+  "description": "RunPictures GPX LeistungsAnalyzer – analysiere deine Lauf- und Gehtrainings mit GPS-Strecken, Leistungskurven, Herzfrequenz und Tempovergleichen.",
   "start_url": "/rpl-analyzer/",
   "scope": "/rpl-analyzer/",
   "display": "standalone",
